@@ -13,20 +13,16 @@
 		"schema": [
 			{
 				"name": "category_id",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "category_name",
-				"type": "varchar"
-			},
-			{
-				"name": "extra_note",
-				"type": "varchar"
+				"type": "nvarchar"
 			}
 		],
 		"typeProperties": {
-			"schema": "Silver",
-			"table": "category_clean"
+			"schema": "silver",
+			"table": "category"
 		}
 	}
 }

@@ -13,28 +13,29 @@
 		"schema": [
 			{
 				"name": "store_id",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "store_name",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "city",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "country",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "opened",
-				"type": "date"
+				"type": "int",
+				"precision": 10
 			}
 		],
 		"typeProperties": {
-			"schema": "Silver",
-			"table": "store_clean"
+			"schema": "silver",
+			"table": "stores"
 		}
 	}
 }

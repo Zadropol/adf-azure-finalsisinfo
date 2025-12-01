@@ -13,15 +13,15 @@
 		"schema": [
 			{
 				"name": "product_id",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "product_name",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "category_id",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "launch_date",
@@ -35,12 +35,12 @@
 			},
 			{
 				"name": "notes",
-				"type": "varchar"
+				"type": "nvarchar"
 			}
 		],
 		"typeProperties": {
-			"schema": "Silver",
-			"table": "product_clean"
+			"schema": "silver",
+			"table": "products"
 		}
 	}
 }

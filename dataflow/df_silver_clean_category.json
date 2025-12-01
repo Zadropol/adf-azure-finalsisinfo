@@ -1,0 +1,94 @@
+{
+	"name": "df_silver_clean_category",
+	"properties": {
+		"folder": {
+			"name": "Silver"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_table_category",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_silver_category",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "filter1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn3"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          category_id as string,",
+				"          category_name as string,",
+				"          extra_note as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"source1 derive(category_id_clean = upper(trim(category_id)),",
+				"          category_name_clean = trim(initCap(category_name))) ~> derivedColumn1",
+				"derivedColumn1 filter(!isNull(category_id_clean) && ",
+				"category_id_clean != '' && ",
+				"!isNull(category_name_clean) && ",
+				"category_name_clean != '') ~> filter1",
+				"filter1 derive(Is_valid_id = regexMatch(category_id_clean, '^CAT-\\\\d+$')) ~> derivedColumn2",
+				"derivedColumn2 aggregate(groupBy(category_id_clean),",
+				"     category_name_clean = first(category_name_clean)) ~> aggregate1",
+				"derivedColumn3 select(mapColumn(",
+				"          category_id = category_id_clean,",
+				"          category_name = category_name_clean_clean",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"aggregate1 derive(category_name_clean_clean = regexReplace(     regexReplace(category_name_clean, ',', ''),      '-',      ' ')) ~> derivedColumn3",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          category_id as string,",
+				"          category_name as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          category_id,",
+				"          category_name",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

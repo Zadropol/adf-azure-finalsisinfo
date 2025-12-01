@@ -1,0 +1,61 @@
+{
+	"name": "df_silver_clean_products",
+	"properties": {
+		"folder": {
+			"name": "Silver"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_table_product",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          product_id as string,",
+				"          product_name as string,",
+				"          category_id as string,",
+				"          launch_date as string,",
+				"          price as string,",
+				"          notes as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"source1 derive(product_id_clean = trim(product_id),",
+				"          product_name_clean = trim(product_name),",
+				"          category_id_clean = trim(upper(category_id)),",
+				"          launch_date_clean = case(     regexMatch(launch_date, '^\\\\d{2}/\\\\d{2}/\\\\d{4}$'),       substring(launch_date, 7, 4) + '-' +        substring(launch_date, 4, 2) + '-' +        substring(launch_date, 1, 2),          regexMatch(launch_date, '^\\\\d{4}/\\\\d{2}/\\\\d{2}$'),       regexReplace(launch_date, '/', '-'),      regexMatch(launch_date, '^\\\\d{4}\\\\.\\\\d{2}\\\\.\\\\d{2}$'),       regexReplace(launch_date, '\\\\.', '-'),          regexMatch(launch_date, '^\\\\d{2}-\\\\d{2}-\\\\d{4}$'),       substring(launch_date, 7, 4) + '-' +        substring(launch_date, 1, 2) + '-' +        substring(launch_date, 4, 2),      launch_date   ),",
+				"          price_clean = replace(\r",
+				"    replace(\r",
+				"        replace(\r",
+				"            trim(price),\r",
+				"        '$',''),\r",
+				"    ' ',''),\r",
+				"',','')\r",
+				") ~> derivedColumn1",
+				"derivedColumn1 derive(launch_date_clean =   iif(\r",
+				"    regexMatch(launch_date, '[A-Z][a-z]+ \\\\d'),\r",
+				"    toDate(launch_date, 'MMM dd yyyy'),\r",
+				"    toDate(launch_date_clean, 'yyyy-MM-dd')\r",
+				"  ),",
+				"          price_clean = ERROR_FUNCTION('')) ~> derivedColumn2"
+			]
+		}
+	}
+}

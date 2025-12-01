@@ -13,7 +13,7 @@
 		"schema": [
 			{
 				"name": "sale_id",
-				"type": "varchar"
+				"type": "nvarchar"
 			},
 			{
 				"name": "sale_date",
@@ -34,8 +34,8 @@
 			}
 		],
 		"typeProperties": {
-			"schema": "Silver",
-			"table": "sales_clean"
+			"schema": "silver",
+			"table": "sales"
 		}
 	}
 }
