@@ -15,13 +15,39 @@
 					"name": "source1"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_silver_products",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [
 				{
 					"name": "derivedColumn1"
 				},
 				{
 					"name": "derivedColumn2"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn3"
+				},
+				{
+					"name": "derivedColumn4"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "derivedColumn5"
+				},
+				{
+					"name": "select3"
 				}
 			],
 			"scriptLines": [
@@ -40,21 +66,87 @@
 				"source1 derive(product_id_clean = trim(product_id),",
 				"          product_name_clean = trim(product_name),",
 				"          category_id_clean = trim(upper(category_id)),",
-				"          launch_date_clean = case(     regexMatch(launch_date, '^\\\\d{2}/\\\\d{2}/\\\\d{4}$'),       substring(launch_date, 7, 4) + '-' +        substring(launch_date, 4, 2) + '-' +        substring(launch_date, 1, 2),          regexMatch(launch_date, '^\\\\d{4}/\\\\d{2}/\\\\d{2}$'),       regexReplace(launch_date, '/', '-'),      regexMatch(launch_date, '^\\\\d{4}\\\\.\\\\d{2}\\\\.\\\\d{2}$'),       regexReplace(launch_date, '\\\\.', '-'),          regexMatch(launch_date, '^\\\\d{2}-\\\\d{2}-\\\\d{4}$'),       substring(launch_date, 7, 4) + '-' +        substring(launch_date, 1, 2) + '-' +        substring(launch_date, 4, 2),      launch_date   ),",
-				"          price_clean = replace(\r",
-				"    replace(\r",
-				"        replace(\r",
-				"            trim(price),\r",
-				"        '$',''),\r",
-				"    ' ',''),\r",
-				"',','')\r",
-				") ~> derivedColumn1",
-				"derivedColumn1 derive(launch_date_clean =   iif(\r",
+				"          launch_date_clean = case(     regexMatch(launch_date, '^\\\\d{2}/\\\\d{2}/\\\\d{4}$'),       substring(launch_date, 7, 4) + '-' +        substring(launch_date, 4, 2) + '-' +        substring(launch_date, 1, 2),          regexMatch(launch_date, '^\\\\d{4}/\\\\d{2}/\\\\d{2}$'),       regexReplace(launch_date, '/', '-'),      regexMatch(launch_date, '^\\\\d{4}\\\\.\\\\d{2}\\\\.\\\\d{2}$'),       regexReplace(launch_date, '\\\\.', '-'),          regexMatch(launch_date, '^\\\\d{2}-\\\\d{2}-\\\\d{4}$'),       substring(launch_date, 7, 4) + '-' +        substring(launch_date, 1, 2) + '-' +        substring(launch_date, 4, 2),      launch_date   )) ~> derivedColumn1",
+				"derivedColumn1 derive(launch_date_clean = iif(\r",
 				"    regexMatch(launch_date, '[A-Z][a-z]+ \\\\d'),\r",
 				"    toDate(launch_date, 'MMM dd yyyy'),\r",
 				"    toDate(launch_date_clean, 'yyyy-MM-dd')\r",
-				"  ),",
-				"          price_clean = ERROR_FUNCTION('')) ~> derivedColumn2"
+				"  )) ~> derivedColumn2",
+				"derivedColumn2 select(mapColumn(",
+				"          product_id = product_id_clean,",
+				"          product_name = product_name_clean,",
+				"          category_id = category_id_clean,",
+				"          launch_date = launch_date_clean,",
+				"          price,",
+				"          notes",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 derive(price_clean = iif(\r",
+				"    (price == \"one thousand seven hundred sixty one\"), \r",
+				"    '1761',\r",
+				"    replace(\r",
+				"        replace(\r",
+				"            replace(\r",
+				"                price, \r",
+				"                ',',\r",
+				"                ''\r",
+				"            ),\r",
+				"            '$',\r",
+				"            ''\r",
+				"        ),\r",
+				"        '.',\r",
+				"        ''\r",
+				"    )\r",
+				")) ~> derivedColumn3",
+				"derivedColumn3 derive(price_clean_clean = iif(product_id == 'P-12' || product_id == 'P-43',\r",
+				"    concat(toString(price_clean), toString(split(notes, ',')[1])),\r",
+				"    toString(price_clean)\r",
+				")) ~> derivedColumn4",
+				"derivedColumn4 select(mapColumn(",
+				"          product_id,",
+				"          product_name,",
+				"          category_id,",
+				"          launch_date,",
+				"          price = price_clean_clean",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select2 derive(price_clean = toDecimal(price, 10, 2),",
+				"          category_id_clean = iif(product_id == 'P-27', 'CAT-3', trim(category_id))) ~> derivedColumn5",
+				"derivedColumn5 select(mapColumn(",
+				"          product_id,",
+				"          product_name,",
+				"          category_id = category_id_clean,",
+				"          launch_date,",
+				"          price = price_clean",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select3",
+				"select3 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          product_id as string,",
+				"          product_name as string,",
+				"          category_id as string,",
+				"          launch_date as date,",
+				"          price as decimal(10,2)",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          product_id,",
+				"          product_name,",
+				"          category_id,",
+				"          launch_date,",
+				"          price",
+				"     )) ~> sink1"
 			]
 		}
 	}
