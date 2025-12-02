@@ -15,8 +15,41 @@
 					"name": "source1"
 				}
 			],
-			"sinks": [],
-			"transformations": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_silver_stores",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "derivedColumn3"
+				},
+				{
+					"name": "select3"
+				},
+				{
+					"name": "derivedColumn4"
+				},
+				{
+					"name": "select4"
+				}
+			],
 			"scriptLines": [
 				"source(output(",
 				"          store_id as string,",
@@ -28,7 +61,85 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     isolationLevel: 'READ_UNCOMMITTED',",
-				"     format: 'table') ~> source1"
+				"     format: 'table') ~> source1",
+				"source1 derive(store_name_clean = trim(replace(replace(replace(store_name, '\"', ''), \"'\", ''), '  ', ' ')),",
+				"          city_clean = trim(replace(replace(replace(city, '\"', ''), \"'\", ''), '  ', ' ')),",
+				"          country_clean = trim(replace(replace(replace(country, '\"', ''), \"'\", ''), '  ', ' '))) ~> derivedColumn1",
+				"derivedColumn1 select(mapColumn(",
+				"          store_id,",
+				"          store_name = store_name_clean,",
+				"          city = city_clean,",
+				"          country = country_clean,",
+				"          opened",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 derive(city_clean = iif(store_id == 'ST-35' && (isNull(city) || trim(city) == ''), \r",
+				"    'Shanghai', \r",
+				"    trim(city)\r",
+				"),",
+				"          country_clean = iif(store_id == 'ST-31' && (isNull(country) || trim(country) == ''),      'Japan',      trim(country) )) ~> derivedColumn2",
+				"derivedColumn2 select(mapColumn(",
+				"          store_id,",
+				"          store_name,",
+				"          city = city_clean,",
+				"          country = country_clean,",
+				"          opened",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select2 derive(city_clean = iif(store_id == 'ST-9',     'Cupertino',     trim(city) ),",
+				"          country_clean = iif(store_id == 'ST-9',     'United States',     trim(country) ),",
+				"          store_name_clean = iif(store_id == 'ST-9',     'Apple Park Visitor Center',     trim(replace(replace(store_name, '\"', ''), \"'\", '')) )) ~> derivedColumn3",
+				"derivedColumn3 select(mapColumn(",
+				"          store_id,",
+				"          store_name = store_name_clean,",
+				"          city = city_clean,",
+				"          country = country_clean,",
+				"          opened",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select3",
+				"select3 derive(store_name_clean = iif(store_id == 'ST-48',     'Apple Sainte-Catherine',     trim(replace(replace(store_name, '\"', ''), \"'\", '')) ),",
+				"          opened_clean = toInteger(\r",
+				"    case(\r",
+				"    store_id == 'ST-18', '2009',\r",
+				"    opened\r",
+				")\r",
+				")) ~> derivedColumn4",
+				"derivedColumn4 select(mapColumn(",
+				"          store_id,",
+				"          store_name = store_name_clean,",
+				"          city,",
+				"          country,",
+				"          opened = opened_clean",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select4",
+				"select4 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          store_id as string,",
+				"          store_name as string,",
+				"          city as string,",
+				"          country as string,",
+				"          opened as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          store_id,",
+				"          store_name,",
+				"          city,",
+				"          country,",
+				"          opened",
+				"     )) ~> sink1"
 			]
 		}
 	}
