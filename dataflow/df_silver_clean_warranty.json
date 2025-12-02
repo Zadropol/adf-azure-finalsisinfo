@@ -15,8 +15,26 @@
 					"name": "source1"
 				}
 			],
-			"sinks": [],
-			"transformations": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_silver_warranty",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "select1"
+				}
+			],
 			"scriptLines": [
 				"source(output(",
 				"          claim_id as string,",
@@ -27,7 +45,36 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     isolationLevel: 'READ_UNCOMMITTED',",
-				"     format: 'table') ~> source1"
+				"     format: 'table') ~> source1",
+				"source1 aggregate(groupBy(claim_id),",
+				"     claim_date = first(claim_date),",
+				"          sale_id = first(sale_id),",
+				"          repair_status = first(repair_status)) ~> aggregate1",
+				"aggregate1 derive(claim_date_clean = toDate(claim_date, 'yyyy-MM-dd')) ~> derivedColumn1",
+				"derivedColumn1 select(mapColumn(",
+				"          claim_id,",
+				"          claim_date = claim_date_clean,",
+				"          sale_id,",
+				"          repair_status",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          claim_id as string,",
+				"          claim_date as date,",
+				"          sale_id as string,",
+				"          repair_status as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
 			]
 		}
 	}
