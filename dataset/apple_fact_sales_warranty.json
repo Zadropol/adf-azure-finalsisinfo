@@ -1,0 +1,58 @@
+{
+	"name": "apple_fact_sales_warranty",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_sql_dw_apple",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "GOLDEN"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "sale_id",
+				"type": "varchar"
+			},
+			{
+				"name": "date_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "product_key",
+				"type": "varchar"
+			},
+			{
+				"name": "store_key",
+				"type": "varchar"
+			},
+			{
+				"name": "claim_key",
+				"type": "varchar"
+			},
+			{
+				"name": "quantity",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "unit_price",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "total_revenue",
+				"type": "decimal",
+				"precision": 15,
+				"scale": 2
+			}
+		],
+		"typeProperties": {
+			"schema": "GOLDEN",
+			"table": "fact_sales_warranty"
+		}
+	}
+}

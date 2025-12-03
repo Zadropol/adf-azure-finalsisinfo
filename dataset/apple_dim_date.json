@@ -1,0 +1,61 @@
+{
+	"name": "apple_dim_date",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_sql_dw_apple",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "GOLDEN"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "date_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "full_date",
+				"type": "date"
+			},
+			{
+				"name": "day_of_month",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "day_name",
+				"type": "varchar"
+			},
+			{
+				"name": "month_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "month_name",
+				"type": "varchar"
+			},
+			{
+				"name": "quarter_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "quarter_name",
+				"type": "varchar"
+			},
+			{
+				"name": "year_key",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "GOLDEN",
+			"table": "dim_date"
+		}
+	}
+}
