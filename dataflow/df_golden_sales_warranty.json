@@ -27,9 +27,24 @@
 						"type": "DatasetReference"
 					},
 					"name": "source3"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_silver_sales",
+						"type": "DatasetReference"
+					},
+					"name": "source4"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "apple_fact_sales_warranty",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [
 				{
 					"name": "join1"
@@ -42,6 +57,9 @@
 				},
 				{
 					"name": "join2"
+				},
+				{
+					"name": "select1"
 				}
 			],
 			"scriptLines": [
@@ -77,6 +95,17 @@
 				"     validateSchema: false,",
 				"     isolationLevel: 'READ_UNCOMMITTED',",
 				"     format: 'table') ~> source3",
+				"source(output(",
+				"          sale_id as string,",
+				"          sale_date as date,",
+				"          store_id as string,",
+				"          product_id as string,",
+				"          quantity as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source4",
 				"source1, source2 join(source1@product_id == source2@product_id,",
 				"     joinType:'inner',",
 				"     matchType:'exact',",
@@ -84,11 +113,54 @@
 				"     broadcast: 'auto')~> join1",
 				"join1 derive(date_key = toInteger(replace(toString(sale_date), '-', ''))) ~> derivedColumn1",
 				"derivedColumn1 derive(total_revenue = quantity * price) ~> derivedColumn2",
-				"derivedColumn2 join(ERROR_FUNCTION('') == ERROR_FUNCTION(''),",
+				"derivedColumn2, source3 join(source1@sale_id == source3@sale_id,",
 				"     joinType:'inner',",
 				"     matchType:'exact',",
 				"     ignoreSpaces: false,",
-				"     broadcast: 'auto')~> join2"
+				"     broadcast: 'auto')~> join2",
+				"join2 select(mapColumn(",
+				"          sale_id = source1@sale_id,",
+				"          date_key,",
+				"          product_id = source1@product_id,",
+				"          store_id,",
+				"          claim_id,",
+				"          quantity,",
+				"          price,",
+				"          total_revenue",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          sale_id as string,",
+				"          date_key as integer,",
+				"          product_key as string,",
+				"          store_key as string,",
+				"          claim_key as string,",
+				"          quantity as integer,",
+				"          unit_price as decimal(10,2),",
+				"          total_revenue as decimal(15,2)",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          sale_id,",
+				"          date_key,",
+				"          product_key = product_id,",
+				"          store_key = store_id,",
+				"          claim_key = claim_id,",
+				"          quantity,",
+				"          unit_price = price,",
+				"          total_revenue",
+				"     )) ~> sink1"
 			]
 		}
 	}
